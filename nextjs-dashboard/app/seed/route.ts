@@ -103,15 +103,14 @@ async function seedRevenue() {
 
 export async function GET() {
   try {
-    const result = await sql.begin((sql) => [
-      sql`DELETE FROM invoices`,
-      sql`DELETE FROM customers`,
-      sql`DELETE FROM users`,
-      seedUsers(),
-      seedCustomers(),
-      seedInvoices(),
-      seedRevenue(),
-    ]);
+    await sql`TRUNCATE TABLE invoices CASCADE`;
+    await sql`TRUNCATE TABLE customers CASCADE`;
+    await sql`TRUNCATE TABLE users CASCADE`;
+
+    await seedUsers();
+    await seedCustomers();
+    await seedInvoices();
+    await seedRevenue();
 
     return Response.json({ message: "Database seeded successfully" });
   } catch (error) {
