@@ -9,19 +9,34 @@ import {
 } from "./definitions";
 import { formatCurrency } from "./utils";
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
+// Create or reuse a single Postgres client across module reloads/workers.
+// Caching on `globalThis` prevents creating many pools during Next.js
+// dev HMR or across multiple server instances, which can exhaust DB
+// connections (EMAXCONNSESSION).
+const globalRef = globalThis as unknown as { __pg_sql?: any };
+const sql =
+  globalRef.__pg_sql ??
+  (globalRef.__pg_sql = postgres(process.env.POSTGRES_URL!, {
+    ssl: "require",
+    // Limit the number of clients this process will open. Tune as needed.
+    max: 4,
+  }));
+
+const SKIP_DB_DURING_BUILD =
+  (process.env.SKIP_DB_DURING_BUILD || "").toLowerCase() === "true";
 
 export async function fetchRevenue() {
   try {
+    if (SKIP_DB_DURING_BUILD) return [] as Revenue[];
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
 
-    console.log('Fetching revenue data...');
+    console.log("Fetching revenue data...");
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const data = await sql<Revenue[]>`SELECT * FROM revenue`;
 
-    console.log('Data fetch completed after 3 seconds.');
+    console.log("Data fetch completed after 3 seconds.");
 
     return data;
   } catch (error) {
@@ -32,6 +47,7 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
   try {
+    if (SKIP_DB_DURING_BUILD) return [] as LatestInvoiceRaw[];
     const data = await sql<LatestInvoiceRaw[]>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
       FROM invoices
@@ -39,7 +55,7 @@ export async function fetchLatestInvoices() {
       ORDER BY invoices.date DESC
       LIMIT 5`;
 
-    const latestInvoices = data.map((invoice) => ({
+    const latestInvoices = data.map((invoice: LatestInvoiceRaw) => ({
       ...invoice,
       amount: formatCurrency(invoice.amount),
     }));
@@ -52,6 +68,13 @@ export async function fetchLatestInvoices() {
 
 export async function fetchCardData() {
   try {
+    if (SKIP_DB_DURING_BUILD)
+      return {
+        numberOfCustomers: 0,
+        numberOfInvoices: 0,
+        totalPaidInvoices: formatCurrency(0),
+        totalPendingInvoices: formatCurrency(0),
+      };
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
@@ -81,7 +104,14 @@ export async function fetchCardData() {
     };
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to fetch card data.");
+    // Fail open: return safe defaults so the UI can render even if the DB is
+    // unavailable (useful for builds and developer machines).
+    return {
+      numberOfCustomers: 0,
+      numberOfInvoices: 0,
+      totalPaidInvoices: formatCurrency(0),
+      totalPendingInvoices: formatCurrency(0),
+    };
   }
 }
 
@@ -93,6 +123,7 @@ export async function fetchFilteredInvoices(
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
+    if (SKIP_DB_DURING_BUILD) return [] as InvoicesTable[];
     const invoices = await sql<InvoicesTable[]>`
       SELECT
         invoices.id,
@@ -123,6 +154,7 @@ export async function fetchFilteredInvoices(
 
 export async function fetchInvoicesPages(query: string) {
   try {
+    if (SKIP_DB_DURING_BUILD) return 0;
     const data = await sql`SELECT COUNT(*)
     FROM invoices
     JOIN customers ON invoices.customer_id = customers.id
@@ -144,6 +176,7 @@ export async function fetchInvoicesPages(query: string) {
 
 export async function fetchInvoiceById(id: string) {
   try {
+    if (SKIP_DB_DURING_BUILD) return null;
     const data = await sql<InvoiceForm[]>`
       SELECT
         invoices.id,
@@ -154,12 +187,12 @@ export async function fetchInvoiceById(id: string) {
       WHERE invoices.id = ${id};
     `;
 
-    const invoice = data.map((invoice) => ({
+    const invoice = data.map((invoice: InvoiceForm) => ({
       ...invoice,
       // Convert amount from cents to dollars
       amount: invoice.amount / 100,
     }));
-console.log(invoice);
+    console.log(invoice);
     return invoice[0];
   } catch (error) {
     console.error("Database Error:", error);
@@ -169,6 +202,7 @@ console.log(invoice);
 
 export async function fetchCustomers() {
   try {
+    if (SKIP_DB_DURING_BUILD) return [] as CustomerField[];
     const customers = await sql<CustomerField[]>`
       SELECT
         id,
@@ -186,6 +220,7 @@ export async function fetchCustomers() {
 
 export async function fetchFilteredCustomers(query: string) {
   try {
+    if (SKIP_DB_DURING_BUILD) return [] as CustomersTableType[];
     const data = await sql<CustomersTableType[]>`
 		SELECT
 		  customers.id,
@@ -204,7 +239,7 @@ export async function fetchFilteredCustomers(query: string) {
 		ORDER BY customers.name ASC
 	  `;
 
-    const customers = data.map((customer) => ({
+    const customers = data.map((customer: CustomersTableType) => ({
       ...customer,
       total_pending: formatCurrency(customer.total_pending),
       total_paid: formatCurrency(customer.total_paid),
