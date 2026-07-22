@@ -1,4 +1,3 @@
-"use server";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
@@ -40,7 +39,7 @@ async function getUser(email: string): Promise<User | null> {
   }
 }
 
-export const { auth, signIn, signOut } = NextAuth({
+const handlers = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
@@ -68,3 +67,10 @@ export const { auth, signIn, signOut } = NextAuth({
     }),
   ],
 });
+
+// `handlers` is a function that handles App Router requests. It also exposes
+// helpers like `signIn`/`signOut` on the returned object in Auth.js v5.
+const maybeHandlers = handlers as any;
+export const auth = maybeHandlers;
+export const signIn = maybeHandlers.signIn;
+export const signOut = maybeHandlers.signOut;

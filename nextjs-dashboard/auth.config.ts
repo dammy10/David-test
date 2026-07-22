@@ -1,7 +1,14 @@
 import type { NextAuthConfig } from "next-auth";
 
+const SECRET = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+if (process.env.NODE_ENV === "production" && !SECRET) {
+  throw new Error(
+    "Missing AUTH_SECRET or NEXTAUTH_SECRET. Set a 32+ byte hex secret in your Vercel project environment variables. Example: openssl rand -hex 32",
+  );
+}
+
 export const authConfig = {
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  secret: SECRET,
   pages: {
     signIn: "/login",
   },
