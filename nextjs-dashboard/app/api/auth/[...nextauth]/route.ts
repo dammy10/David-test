@@ -1,4 +1,10 @@
-import { handlers } from "@/auth";
-import { handlers } from "@/auth";
+import { auth } from "@/auth";
+import type { NextRequest } from "next/server";
 
-export const { GET, POST } = handlers;
+export async function GET(request: NextRequest) {
+  return auth(request);
+}
+
+export async function POST(request: NextRequest) {
+  return auth(request);
+}
