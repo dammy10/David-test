@@ -12,16 +12,19 @@ export default function SideNav() {
           <AcmeLogo />
         </div>
       </div>
-      <div className="flex grow flex-col justify-between space-y-4 md:space-y-6">
-        <NavLinks />
+      <div className="flex grow flex-col">
+        <div className="flex flex-col gap-1">
+          <NavLinks />
+        </div>
         <form
           action={async () => {
             "use server";
             await signOut({ redirectTo: "/" });
           }}
+          className="mt-auto"
         >
-          <button className="flex h-[48px] w-full items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:justify-start md:px-4">
-            <PowerIcon className="w-6" />
+          <button className="flex h-[40px] w-full items-center justify-center gap-2 rounded-md bg-gray-50 px-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:justify-start">
+            <PowerIcon className="w-5" />
             <span>Sign Out</span>
           </button>
         </form>
