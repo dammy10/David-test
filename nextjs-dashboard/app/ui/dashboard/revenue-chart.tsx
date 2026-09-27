@@ -4,6 +4,12 @@ import { lusitana } from "@/app/ui/fonts";
 import { fetchRevenue } from "@/app/lib/data";
 import { Revenue } from "@/app/lib/definitions";
 
+const formatRevenueAmount = (amount: number) =>
+  amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
 // This component is representational only.
 // For data visualization UI, check out:
 // https://www.tremor.so/
@@ -42,12 +48,14 @@ export default async function RevenueChart() {
             <div key={month.month} className="flex flex-col items-center gap-2">
               <div
                 className="flex h-[350px] w-full items-end justify-center gap-1"
-                role="img"
-                aria-label={`${month.month}: $${month.paid.toLocaleString("en-US")} paid, $${month.pending.toLocaleString("en-US")} pending`}
-                title={`${month.month}: $${month.paid.toLocaleString("en-US")} paid, $${month.pending.toLocaleString("en-US")} pending`}
+                role="group"
+                aria-label={`${month.month} invoice amounts`}
               >
                 <div
-                  className="w-1/2 rounded-t-sm bg-blue-500"
+                  className="w-1/2 cursor-pointer rounded-t-sm bg-blue-500 hover:brightness-90"
+                  role="img"
+                  aria-label={`${month.month} paid: ${formatRevenueAmount(month.paid)}`}
+                  title={`${month.month} paid: ${formatRevenueAmount(month.paid)}`}
                   style={{
                     height: `${Math.min(
                       chartHeight,
@@ -56,7 +64,10 @@ export default async function RevenueChart() {
                   }}
                 />
                 <div
-                  className="w-1/2 rounded-t-sm bg-gray-300"
+                  className="w-1/2 cursor-pointer rounded-t-sm bg-gray-300 hover:brightness-90"
+                  role="img"
+                  aria-label={`${month.month} pending: ${formatRevenueAmount(month.pending)}`}
+                  title={`${month.month} pending: ${formatRevenueAmount(month.pending)}`}
                   style={{
                     height: `${Math.min(
                       chartHeight,
