@@ -28,22 +28,15 @@ const SKIP_DB_DURING_BUILD =
 export async function fetchRevenue() {
   try {
     if (SKIP_DB_DURING_BUILD) return [] as Revenue[];
-    const data = await sql<Revenue[]>`
-      SELECT
-        TO_CHAR(month_start, 'Mon') AS month,
-        COALESCE(SUM(invoices.amount), 0)::float / 100 AS revenue
-      FROM GENERATE_SERIES(
-        DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months',
-        DATE_TRUNC('month', CURRENT_DATE),
-        INTERVAL '1 month'
-      ) AS months(month_start)
-      LEFT JOIN invoices
-        ON invoices.status = 'paid'
-        AND invoices.date >= months.month_start
-        AND invoices.date < months.month_start + INTERVAL '1 month'
-      GROUP BY month_start
-      ORDER BY month_start
-    `;
+    // Artificially delay a response for demo purposes.
+    // Don't do this in production :)
+
+    console.log("Fetching revenue data...");
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    const data = await sql<Revenue[]>`SELECT * FROM revenue`;
+
+    console.log("Data fetch completed after 3 seconds.");
 
     return data;
   } catch (error) {
