@@ -2,6 +2,10 @@
 
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import {
+  getOAuthProviderCredentials,
+  type OAuthProviderId,
+} from "@/app/lib/auth-providers";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -149,6 +153,36 @@ export async function authenticate(
           return 'Something went wrong.';
       }
     }
+
     throw error;
   }
+}
+
+export async function authenticateWithOAuth(formData: FormData) {
+  const provider = formData.get("provider");
+  if (
+    provider !== "github" &&
+    provider !== "google" &&
+    provider !== "microsoft-entra-id"
+  ) {
+    throw new Error("Unsupported sign-in provider.");
+  }
+
+  const oauthProvider: OAuthProviderId = provider;
+  if (!getOAuthProviderCredentials(oauthProvider)) {
+    throw new Error(
+      `OAuth credentials are not configured for ${oauthProvider}.`,
+    );
+  }
+
+  const callbackUrl = formData.get("redirectTo");
+  const redirectTo =
+    typeof callbackUrl === "string" &&
+    callbackUrl.startsWith("/") &&
+    !callbackUrl.startsWith("//") &&
+    !callbackUrl.includes("\\")
+      ? callbackUrl
+      : "/dashboard";
+
+  await signIn(oauthProvider, { redirectTo });
 }

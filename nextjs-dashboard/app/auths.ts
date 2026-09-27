@@ -1,10 +1,15 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { authConfig } from "@/auth.config";
+import type { NextAuthConfig } from "next-auth";
 import { z } from "zod";
 import type { User } from "@/app/lib/definitions";
 import bcrypt from "bcrypt";
 import postgres from "postgres";
+import { getOAuthProviderCredentials } from "@/app/lib/auth-providers";
 
 // Reuse a single Postgres client across reloads to avoid exhausting DB
 // connections during dev/hot-reload or multiple server workers.
@@ -20,6 +25,43 @@ const CredentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
+
+const providers: NonNullable<NextAuthConfig["providers"]> = [
+  Credentials({
+    async authorize(credentials) {
+      const parsedCredentials = CredentialsSchema.safeParse(credentials);
+      if (!parsedCredentials.success) {
+        console.log("auths.authorize: invalid payload", credentials);
+        return null;
+      }
+
+      const { email, password } = parsedCredentials.data;
+      const user = await getUser(email);
+      if (!user) {
+        console.log("auths.authorize: user not found", email);
+        return null;
+      }
+
+      const passwordsMatch = await bcrypt.compare(password, user.password);
+      console.log("auths.authorize: passwordsMatch", passwordsMatch);
+      if (passwordsMatch) return user;
+
+      console.log("auths.authorize: invalid credentials for", email);
+      return null;
+    },
+  }),
+];
+
+const githubCredentials = getOAuthProviderCredentials("github");
+if (githubCredentials) providers.push(GitHub(githubCredentials));
+
+const googleCredentials = getOAuthProviderCredentials("google");
+if (googleCredentials) providers.push(Google(googleCredentials));
+
+const microsoftCredentials = getOAuthProviderCredentials("microsoft-entra-id");
+if (microsoftCredentials) {
+  providers.push(MicrosoftEntraID(microsoftCredentials));
+}
 
 async function getUser(email: string): Promise<User | null> {
   try {
@@ -39,31 +81,98 @@ async function getUser(email: string): Promise<User | null> {
   }
 }
 
+async function isVerifiedGitHubEmail(email: string, accessToken: string) {
+  const response = await fetch("https://api.github.com/user/emails", {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${accessToken}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+
+  if (!response.ok) {
+    console.error("Failed to verify GitHub email:", response.status);
+    return false;
+  }
+
+  const emails = z
+    .array(
+      z.object({
+        email: z.string().email(),
+        primary: z.boolean(),
+        verified: z.boolean(),
+      }),
+    )
+    .safeParse(await response.json());
+
+  if (!emails.success) {
+    console.error("GitHub returned an invalid email verification response.");
+    return false;
+  }
+
+  return emails.data.some(
+    (entry) =>
+      entry.primary &&
+      entry.verified &&
+      entry.email.toLowerCase() === email.toLowerCase(),
+  );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  providers: [
-    Credentials({
-      async authorize(credentials) {
-        const parsedCredentials = CredentialsSchema.safeParse(credentials);
-        if (!parsedCredentials.success) {
-          console.log("auths.authorize: invalid payload", credentials);
-          return null;
+  providers,
+  callbacks: {
+    ...authConfig.callbacks,
+    async signIn({ account, profile, user }) {
+      if (account?.provider === "credentials") return true;
+      if (!account || !user.email) return false;
+
+      const email = user.email.trim().toLowerCase();
+
+      if (account.provider === "google") {
+        const googleProfile = z
+          .object({
+            email: z.string().email(),
+            email_verified: z.literal(true),
+          })
+          .safeParse(profile);
+
+        if (
+          !googleProfile.success ||
+          googleProfile.data.email.toLowerCase() !== email
+        ) {
+          return false;
         }
-
-        const { email, password } = parsedCredentials.data;
-        const user = await getUser(email);
-        if (!user) {
-          console.log("auths.authorize: user not found", email);
-          return null;
+      } else if (account.provider === "github") {
+        if (
+          !account.access_token ||
+          !(await isVerifiedGitHubEmail(email, account.access_token))
+        ) {
+          return false;
         }
+      } else if (account.provider === "microsoft-entra-id") {
+        const microsoftProfile = z
+          .object({ email: z.string().email() })
+          .safeParse(profile);
 
-        const passwordsMatch = await bcrypt.compare(password, user.password);
-        console.log("auths.authorize: passwordsMatch", passwordsMatch);
-        if (passwordsMatch) return user;
+        if (
+          !microsoftProfile.success ||
+          microsoftProfile.data.email.toLowerCase() !== email
+        ) {
+          return false;
+        }
+      } else {
+        return false;
+      }
 
-        console.log("auths.authorize: invalid credentials for", email);
-        return null;
-      },
-    }),
-  ],
+      const existingUsers = await sql<{ email: string }[]>`
+        SELECT email
+        FROM users
+        WHERE LOWER(email) = ${email}
+        LIMIT 1
+      `;
+
+      return existingUsers.length > 0;
+    },
+  },
 });
