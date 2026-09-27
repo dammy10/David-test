@@ -49,9 +49,9 @@ export function Card({
 
   return (
     <div className="rounded-xl bg-gray-50 p-2 shadow-sm">
-      <div className="flex p-4">
-        {Icon ? <Icon className="h-5 w-5 text-gray-700" /> : null}
-        <h3 className="ml-2 text-sm font-medium">{title}</h3>
+      <div className="flex h-14 items-center gap-2 p-4">
+        {Icon ? <Icon className="h-5 w-5 shrink-0 text-gray-700" /> : null}
+        <h3 className="min-w-0 truncate text-sm font-medium">{title}</h3>
       </div>
       <p
         className={`${lusitana.className}

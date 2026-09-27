@@ -23,7 +23,7 @@ export default async function RevenueChart() {
   return (
     <div className="w-full md:col-span-4">
       <h2 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
-        Invoice Totals (Paid + Pending)
+        Recent Revenue
       </h2>
       {/* NOTE: Uncomment this code in Chapter 7 */}
 
@@ -43,7 +43,10 @@ export default async function RevenueChart() {
               <div
                 className="w-full rounded-md bg-blue-300"
                 style={{
-                  height: `${(chartHeight / topLabel) * month.revenue}px`,
+                  height: `${Math.min(
+                    chartHeight,
+                    Math.max(0, (chartHeight / topLabel) * month.revenue),
+                  )}px`,
                 }}
               ></div>
               <p className="-rotate-90 text-sm text-gray-400 sm:rotate-0">
