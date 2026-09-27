@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
-import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { authConfig } from "@/auth.config";
 import type { NextAuthConfig } from "next-auth";
 import { z } from "zod";
@@ -57,11 +56,6 @@ if (githubCredentials) providers.push(GitHub(githubCredentials));
 
 const googleCredentials = getOAuthProviderCredentials("google");
 if (googleCredentials) providers.push(Google(googleCredentials));
-
-const microsoftCredentials = getOAuthProviderCredentials("microsoft-entra-id");
-if (microsoftCredentials) {
-  providers.push(MicrosoftEntraID(microsoftCredentials));
-}
 
 async function getUser(email: string): Promise<User | null> {
   try {
@@ -147,17 +141,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (
           !account.access_token ||
           !(await isVerifiedGitHubEmail(email, account.access_token))
-        ) {
-          return false;
-        }
-      } else if (account.provider === "microsoft-entra-id") {
-        const microsoftProfile = z
-          .object({ email: z.string().email() })
-          .safeParse(profile);
-
-        if (
-          !microsoftProfile.success ||
-          microsoftProfile.data.email.toLowerCase() !== email
         ) {
           return false;
         }
