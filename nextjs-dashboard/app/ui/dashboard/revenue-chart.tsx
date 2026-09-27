@@ -41,23 +41,49 @@ export default async function RevenueChart() {
           {revenue.map((month) => (
             <div key={month.month} className="flex flex-col items-center gap-2">
               <div
-                className="w-full rounded-md bg-blue-300"
-                style={{
-                  height: `${Math.min(
-                    chartHeight,
-                    Math.max(0, (chartHeight / topLabel) * month.revenue),
-                  )}px`,
-                }}
-              ></div>
+                className="flex h-[350px] w-full items-end justify-center gap-1"
+                role="img"
+                aria-label={`${month.month}: $${month.paid.toLocaleString("en-US")} paid, $${month.pending.toLocaleString("en-US")} pending`}
+                title={`${month.month}: $${month.paid.toLocaleString("en-US")} paid, $${month.pending.toLocaleString("en-US")} pending`}
+              >
+                <div
+                  className="w-1/2 rounded-t-sm bg-blue-500"
+                  style={{
+                    height: `${Math.min(
+                      chartHeight,
+                      Math.max(0, (chartHeight / topLabel) * month.paid),
+                    )}px`,
+                  }}
+                />
+                <div
+                  className="w-1/2 rounded-t-sm bg-gray-300"
+                  style={{
+                    height: `${Math.min(
+                      chartHeight,
+                      Math.max(0, (chartHeight / topLabel) * month.pending),
+                    )}px`,
+                  }}
+                />
+              </div>
               <p className="-rotate-90 text-sm text-gray-400 sm:rotate-0">
                 {month.month}
               </p>
             </div>
           ))}
         </div>
-        <div className="flex items-center pb-2 pt-6">
-          <CalendarIcon className="h-5 w-5 text-gray-500" />
-          <h3 className="ml-2 text-sm text-gray-500 ">Last 12 months</h3>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pb-2 pt-6">
+          <div className="flex items-center">
+            <CalendarIcon className="h-5 w-5 text-gray-500" />
+            <h3 className="ml-2 text-sm text-gray-500">Last 12 months</h3>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="h-3 w-3 rounded-sm bg-blue-500" />
+            Paid
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="h-3 w-3 rounded-sm bg-gray-300" />
+            Pending
+          </div>
         </div>
       </div>
     </div>

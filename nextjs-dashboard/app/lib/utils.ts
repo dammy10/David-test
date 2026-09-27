@@ -24,7 +24,7 @@ export const formatDateToLocal = (
 export const generateYAxis = (revenue: Revenue[]) => {
   const highestRecord = Math.max(
     0,
-    ...revenue.map((month) => month.revenue),
+    ...revenue.map((month) => month.paid + month.pending),
   );
   const rawInterval = Math.max(1000, highestRecord / 5);
   const magnitude = 10 ** Math.floor(Math.log10(rawInterval));

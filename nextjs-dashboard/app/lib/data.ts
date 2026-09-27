@@ -31,7 +31,14 @@ export async function fetchRevenue() {
     const data = await sql<Revenue[]>`
       SELECT
         TO_CHAR(month_start, 'Mon') AS month,
-        COALESCE(SUM(invoices.amount), 0)::float / 100 AS revenue
+        COALESCE(
+          SUM(CASE WHEN invoices.status = 'paid' THEN invoices.amount ELSE 0 END),
+          0
+        )::float / 100 AS paid,
+        COALESCE(
+          SUM(CASE WHEN invoices.status = 'pending' THEN invoices.amount ELSE 0 END),
+          0
+        )::float / 100 AS pending
       FROM GENERATE_SERIES(
         DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months',
         DATE_TRUNC('month', CURRENT_DATE),
