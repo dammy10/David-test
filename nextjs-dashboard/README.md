@@ -23,3 +23,8 @@ Register each callback URL with the provider using both the local origin
 variables to the local `.env` file and the Vercel project settings, then restart
 or redeploy the app. The provider buttons remain disabled until both variables
 for that provider are configured.
+
+Google sign-in always requests account selection. To switch dashboard users,
+sign out of the dashboard first. GitHub OAuth uses the account currently signed
+in to GitHub in the browser; sign out of GitHub or use a separate browser
+profile to choose a different GitHub account.

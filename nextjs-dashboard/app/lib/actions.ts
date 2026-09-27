@@ -183,5 +183,8 @@ export async function authenticateWithOAuth(formData: FormData) {
       ? callbackUrl
       : "/dashboard";
 
-  await signIn(oauthProvider, { redirectTo });
+  const authorizationParams =
+    oauthProvider === "google" ? { prompt: "select_account" } : undefined;
+
+  await signIn(oauthProvider, { redirectTo }, authorizationParams);
 }

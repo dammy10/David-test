@@ -119,6 +119,11 @@ export default function LoginForm({
             OAuth options require provider credentials to be configured.
           </p>
         )}
+        <p className="text-center text-xs text-gray-500">
+          To switch dashboard accounts, sign out first. Google will let you
+          choose an account; GitHub uses the account currently signed in at
+          github.com.
+        </p>
       </div>
     </>
   );
