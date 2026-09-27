@@ -17,15 +17,10 @@ const createPageURL = (pageNumber: number | string) => {
     return `${pathname}?${params.toString()}`;
   };
 
-  // NOTE: Uncomment this code in Chapter 10
-
-  // const allPages = generatePagination(currentPage, totalPages);
+  const allPages = generatePagination(currentPage, totalPages);
 
   return (
-    <>
-      {/*  NOTE: Uncomment this code in Chapter 10 */}
-
-      {/* <div className="inline-flex">
+    <div className="inline-flex">
         <PaginationArrow
           direction="left"
           href={createPageURL(currentPage - 1)}
@@ -58,8 +53,7 @@ const createPageURL = (pageNumber: number | string) => {
           href={createPageURL(currentPage + 1)}
           isDisabled={currentPage >= totalPages}
         />
-      </div> */}
-    </>
+    </div>
   );
 }
 

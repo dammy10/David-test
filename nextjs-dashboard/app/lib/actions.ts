@@ -10,11 +10,17 @@ import postgres from "postgres";
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
 const FormSchema = z.object({
   id: z.string(),
-  customerId: z.string({    invalid_type_error: 'Please select a customer.',
-  }),
-  amount: z.coerce.number()
-  .gt(0, { message: 'Please enter an amount greater than $0.' }),
-  status: z.enum(["pending", "paid"],{    invalid_type_error: 'Please select an invoice status.',
+  customerId: z
+    .string({ invalid_type_error: 'Please select a customer.' })
+    .min(1, { message: 'Please select a customer.' }),
+  amount: z.preprocess(
+    (value) => (value === null || value === '' ? undefined : value),
+    z.coerce
+      .number({ invalid_type_error: 'Please enter an amount.' })
+      .gt(0, { message: 'Please enter an amount greater than $0.' }),
+  ),
+  status: z.enum(["pending", "paid"], {
+    invalid_type_error: 'Please select an invoice status.',
   }),
   date: z.string(),
 });
