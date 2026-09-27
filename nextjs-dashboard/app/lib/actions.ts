@@ -65,6 +65,7 @@ const { customerId, amount, status } = validatedFields.data;
   }
  
   revalidatePath('/dashboard/invoices');
+  revalidatePath('/dashboard');
   redirect('/dashboard/invoices');
 }
 
@@ -97,15 +98,20 @@ const { customerId, amount, status } = validatedFields.data;
     return { message: 'Database Error: Failed to Update Invoice.' };
   }
   revalidatePath('/dashboard/invoices');
+  revalidatePath('/dashboard');
   redirect('/dashboard/invoices');
 }
 
 
 export async function deleteInvoice(id: string) {
-  throw new Error("Failed to Delete Invoice");
-
-  await sql`DELETE FROM invoices WHERE id = ${id}`;
+  try {
+    await sql`DELETE FROM invoices WHERE id = ${id}`;
+  } catch (error) {
+    console.error("Database Error:", error);
+    throw new Error("Failed to delete invoice.");
+  }
   revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard");
 }
 
 export async function authenticate(
