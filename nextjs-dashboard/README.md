@@ -8,9 +8,10 @@ For more information, see the [course curriculum](https://nextjs.org/learn) on t
 
 Email and password sign-in remains available. GitHub and Google sign-in are
 enabled when their OAuth client ID and secret are configured.
-Social sign-in is limited to existing users whose account email matches the
-provider email; Google and GitHub emails must also be verified. OAuth does not
-create new user records:
+Social sign-in creates a dashboard account on the first sign-in using the
+provider's verified email. GitHub and Google emails must be verified. A
+random password is generated for OAuth-only accounts, which can still use
+OAuth to sign in:
 
 | Provider | Environment variables | Callback URL |
 | --- | --- | --- |

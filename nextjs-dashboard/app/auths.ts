@@ -7,6 +7,7 @@ import type { NextAuthConfig } from "next-auth";
 import { z } from "zod";
 import type { User } from "@/app/lib/definitions";
 import bcrypt from "bcrypt";
+import { randomBytes } from "node:crypto";
 import postgres from "postgres";
 import { getOAuthProviderCredentials } from "@/app/lib/auth-providers";
 
@@ -75,6 +76,38 @@ async function getUser(email: string): Promise<User | null> {
   }
 }
 
+async function ensureOAuthUser(
+  email: string,
+  name: string | null | undefined,
+) {
+  const existingUsers = await sql<{ email: string }[]>`
+    SELECT email
+    FROM users
+    WHERE LOWER(email) = ${email}
+    LIMIT 1
+  `;
+
+  if (existingUsers.length > 0) return true;
+
+  const password = await bcrypt.hash(randomBytes(32).toString("hex"), 10);
+  const displayName = name?.trim() || email.split("@")[0];
+
+  await sql`
+    INSERT INTO users (name, email, password)
+    VALUES (${displayName}, ${email}, ${password})
+    ON CONFLICT (email) DO NOTHING
+  `;
+
+  const createdUsers = await sql<{ email: string }[]>`
+    SELECT email
+    FROM users
+    WHERE LOWER(email) = ${email}
+    LIMIT 1
+  `;
+
+  return createdUsers.length > 0;
+}
+
 async function isVerifiedGitHubEmail(email: string, accessToken: string) {
   const response = await fetch("https://api.github.com/user/emails", {
     headers: {
@@ -135,6 +168,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           !googleProfile.success ||
           googleProfile.data.email.toLowerCase() !== email
         ) {
+          console.warn("OAuth sign-in denied: Google email is not verified.");
           return false;
         }
       } else if (account.provider === "github") {
@@ -142,20 +176,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           !account.access_token ||
           !(await isVerifiedGitHubEmail(email, account.access_token))
         ) {
+          console.warn("OAuth sign-in denied: GitHub email is not verified.");
           return false;
         }
       } else {
         return false;
       }
 
-      const existingUsers = await sql<{ email: string }[]>`
-        SELECT email
-        FROM users
-        WHERE LOWER(email) = ${email}
-        LIMIT 1
-      `;
-
-      return existingUsers.length > 0;
+      return ensureOAuthUser(email, user.name);
     },
   },
 });
