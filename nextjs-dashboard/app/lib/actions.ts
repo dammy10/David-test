@@ -162,8 +162,7 @@ export async function authenticateWithOAuth(formData: FormData) {
   const provider = formData.get("provider");
   if (
     provider !== "github" &&
-    provider !== "google" &&
-    provider !== "microsoft-entra-id"
+    provider !== "google"
   ) {
     throw new Error("Unsupported sign-in provider.");
   }

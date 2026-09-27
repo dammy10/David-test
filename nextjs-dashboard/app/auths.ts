@@ -2,12 +2,12 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
-import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { authConfig } from "@/auth.config";
 import type { NextAuthConfig } from "next-auth";
 import { z } from "zod";
 import type { User } from "@/app/lib/definitions";
 import bcrypt from "bcrypt";
+import { randomBytes } from "node:crypto";
 import postgres from "postgres";
 import { getOAuthProviderCredentials } from "@/app/lib/auth-providers";
 
@@ -58,11 +58,6 @@ if (githubCredentials) providers.push(GitHub(githubCredentials));
 const googleCredentials = getOAuthProviderCredentials("google");
 if (googleCredentials) providers.push(Google(googleCredentials));
 
-const microsoftCredentials = getOAuthProviderCredentials("microsoft-entra-id");
-if (microsoftCredentials) {
-  providers.push(MicrosoftEntraID(microsoftCredentials));
-}
-
 async function getUser(email: string): Promise<User | null> {
   try {
     console.log("auths.getUser: loading user", email);
@@ -79,6 +74,38 @@ async function getUser(email: string): Promise<User | null> {
     console.error("Failed to load user", error);
     return null;
   }
+}
+
+async function ensureOAuthUser(
+  email: string,
+  name: string | null | undefined,
+) {
+  const existingUsers = await sql<{ email: string }[]>`
+    SELECT email
+    FROM users
+    WHERE LOWER(email) = ${email}
+    LIMIT 1
+  `;
+
+  if (existingUsers.length > 0) return true;
+
+  const password = await bcrypt.hash(randomBytes(32).toString("hex"), 10);
+  const displayName = name?.trim() || email.split("@")[0];
+
+  await sql`
+    INSERT INTO users (name, email, password)
+    VALUES (${displayName}, ${email}, ${password})
+    ON CONFLICT (email) DO NOTHING
+  `;
+
+  const createdUsers = await sql<{ email: string }[]>`
+    SELECT email
+    FROM users
+    WHERE LOWER(email) = ${email}
+    LIMIT 1
+  `;
+
+  return createdUsers.length > 0;
 }
 
 async function isVerifiedGitHubEmail(email: string, accessToken: string) {
@@ -141,6 +168,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           !googleProfile.success ||
           googleProfile.data.email.toLowerCase() !== email
         ) {
+          console.warn("OAuth sign-in denied: Google email is not verified.");
           return false;
         }
       } else if (account.provider === "github") {
@@ -148,31 +176,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           !account.access_token ||
           !(await isVerifiedGitHubEmail(email, account.access_token))
         ) {
-          return false;
-        }
-      } else if (account.provider === "microsoft-entra-id") {
-        const microsoftProfile = z
-          .object({ email: z.string().email() })
-          .safeParse(profile);
-
-        if (
-          !microsoftProfile.success ||
-          microsoftProfile.data.email.toLowerCase() !== email
-        ) {
+          console.warn("OAuth sign-in denied: GitHub email is not verified.");
           return false;
         }
       } else {
         return false;
       }
 
-      const existingUsers = await sql<{ email: string }[]>`
-        SELECT email
-        FROM users
-        WHERE LOWER(email) = ${email}
-        LIMIT 1
-      `;
-
-      return existingUsers.length > 0;
+      return ensureOAuthUser(email, user.name);
     },
   },
 });

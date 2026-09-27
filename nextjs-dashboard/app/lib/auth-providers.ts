@@ -1,7 +1,6 @@
 export const oauthProviderIds = [
   "github",
   "google",
-  "microsoft-entra-id",
 ] as const;
 
 export type OAuthProviderId = (typeof oauthProviderIds)[number];
@@ -17,10 +16,6 @@ const providerEnvironmentVariables: Record<
   google: {
     clientId: "AUTH_GOOGLE_ID",
     clientSecret: "AUTH_GOOGLE_SECRET",
-  },
-  "microsoft-entra-id": {
-    clientId: "AUTH_MICROSOFT_ENTRA_ID_ID",
-    clientSecret: "AUTH_MICROSOFT_ENTRA_ID_SECRET",
   },
 };
 

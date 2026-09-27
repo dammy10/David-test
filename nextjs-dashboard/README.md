@@ -6,17 +6,17 @@ For more information, see the [course curriculum](https://nextjs.org/learn) on t
 
 ## OAuth sign-in
 
-Email and password sign-in remains available. GitHub, Google, and Microsoft
-sign-in are enabled when their OAuth client ID and secret are configured.
-Social sign-in is limited to existing users whose account email matches the
-provider email; Google and GitHub emails must also be verified. OAuth does not
-create new user records:
+Email and password sign-in remains available. GitHub and Google sign-in are
+enabled when their OAuth client ID and secret are configured.
+Social sign-in creates a dashboard account on the first sign-in using the
+provider's verified email. GitHub and Google emails must be verified. A
+random password is generated for OAuth-only accounts, which can still use
+OAuth to sign in:
 
 | Provider | Environment variables | Callback URL |
 | --- | --- | --- |
 | GitHub | `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` | `/api/auth/callback/github` |
 | Google | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | `/api/auth/callback/google` |
-| Microsoft Entra ID | `AUTH_MICROSOFT_ENTRA_ID_ID`, `AUTH_MICROSOFT_ENTRA_ID_SECRET` | `/api/auth/callback/microsoft-entra-id` |
 
 Register each callback URL with the provider using both the local origin
 (`http://localhost:3000`) and the deployed origin. Add the matching environment
