@@ -109,15 +109,29 @@ const { customerId, amount, status } = validatedFields.data;
 }
 
 
-export async function deleteInvoice(id: string) {
+export async function deleteInvoice(
+  id: string,
+  _prevState: State,
+  _formData: FormData,
+): Promise<State> {
+  let invoiceDeleted: boolean;
   try {
-    await sql`DELETE FROM invoices WHERE id = ${id}`;
+    const deletedInvoices =
+      await sql`DELETE FROM invoices WHERE id = ${id} RETURNING id`;
+    invoiceDeleted = deletedInvoices.length > 0;
   } catch (error) {
     console.error("Database Error:", error);
-    throw new Error("Failed to delete invoice.");
+    return { message: "Database Error: Failed to Delete Invoice." };
   }
+
   revalidatePath("/dashboard/invoices");
   revalidatePath("/dashboard");
+
+  if (!invoiceDeleted) {
+    return { message: "Invoice was already deleted. The list was refreshed." };
+  }
+
+  return { message: null };
 }
 
 export async function authenticate(
