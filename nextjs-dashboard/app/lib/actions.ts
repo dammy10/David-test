@@ -1,7 +1,7 @@
 "use server";
 
-import { signIn } from '@/auth';
-import { AuthError } from 'next-auth';
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
 import {
   getOAuthProviderCredentials,
   type OAuthProviderId,
@@ -9,22 +9,22 @@ import {
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import postgres from "postgres";
+// import postgres from "postgres";
+import { sql } from "./db";
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: "require" });
 const FormSchema = z.object({
   id: z.string(),
   customerId: z
-    .string({ invalid_type_error: 'Please select a customer.' })
-    .min(1, { message: 'Please select a customer.' }),
+    .string({ invalid_type_error: "Please select a customer." })
+    .min(1, { message: "Please select a customer." }),
   amount: z.preprocess(
-    (value) => (value === null || value === '' ? undefined : value),
+    (value) => (value === null || value === "" ? undefined : value),
     z.coerce
-      .number({ invalid_type_error: 'Please enter an amount.' })
-      .gt(0, { message: 'Please enter an amount greater than $0.' }),
+      .number({ invalid_type_error: "Please enter an amount." })
+      .gt(0, { message: "Please enter an amount greater than $0." }),
   ),
   status: z.enum(["pending", "paid"], {
-    invalid_type_error: 'Please select an invoice status.',
+    invalid_type_error: "Please select an invoice status.",
   }),
   date: z.string(),
 });
@@ -41,26 +41,25 @@ export type State = {
   message?: string | null;
 };
 
-
-export async function createInvoice(prevState: State,formData: FormData) {
+export async function createInvoice(prevState: State, formData: FormData) {
   const validatedFields = CreateInvoice.safeParse({
-    customerId: formData.get('customerId'),
-    amount: formData.get('amount'),
-    status: formData.get('status'),
+    customerId: formData.get("customerId"),
+    amount: formData.get("amount"),
+    status: formData.get("status"),
   });
 
- if (!validatedFields.success) {
-     return {
-       errors: validatedFields.error.flatten().fieldErrors,
-       message: 'Missing Fields. Failed to Create Invoice.',
-     };
-   }
-     
-const { customerId, amount, status } = validatedFields.data;
-   
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Create Invoice.",
+    };
+  }
+
+  const { customerId, amount, status } = validatedFields.data;
+
   const amountInCents = amount * 100;
-  const date = new Date().toISOString().split('T')[0];
- 
+  const date = new Date().toISOString().split("T")[0];
+
   try {
     await sql`
       INSERT INTO invoices (customer_id, amount, status, date)
@@ -70,32 +69,36 @@ const { customerId, amount, status } = validatedFields.data;
     // We'll also log the error to the console for now
     console.error(error);
     return {
-      message: 'Database Error: Failed to Create Invoice.',
+      message: "Database Error: Failed to Create Invoice.",
     };
   }
- 
-  revalidatePath('/dashboard/invoices');
-  revalidatePath('/dashboard');
-  redirect('/dashboard/invoices');
+
+  revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard");
+  redirect("/dashboard/invoices");
 }
 
-export async function updateInvoice(id: string, prevState: State, formData: FormData) {
+export async function updateInvoice(
+  id: string,
+  prevState: State,
+  formData: FormData,
+) {
   const validatedFields = UpdateInvoice.safeParse({
-    customerId: formData.get('customerId'),
-    amount: formData.get('amount'),
-    status: formData.get('status'),
+    customerId: formData.get("customerId"),
+    amount: formData.get("amount"),
+    status: formData.get("status"),
   });
- 
-if (!validatedFields.success) {
+
+  if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Missing Fields. Failed to Update Invoice.',
+      message: "Missing Fields. Failed to Update Invoice.",
     };
   }
 
-const { customerId, amount, status } = validatedFields.data;
+  const { customerId, amount, status } = validatedFields.data;
   const amountInCents = amount * 100;
- 
+
   try {
     await sql`
         UPDATE invoices
@@ -105,13 +108,12 @@ const { customerId, amount, status } = validatedFields.data;
   } catch (error) {
     // We'll also log the error to the console for now
     console.error(error);
-    return { message: 'Database Error: Failed to Update Invoice.' };
+    return { message: "Database Error: Failed to Update Invoice." };
   }
-  revalidatePath('/dashboard/invoices');
-  revalidatePath('/dashboard');
-  redirect('/dashboard/invoices');
+  revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard");
+  redirect("/dashboard/invoices");
 }
-
 
 export async function deleteInvoice(
   id: string,
@@ -143,14 +145,14 @@ export async function authenticate(
   formData: FormData,
 ) {
   try {
-    await signIn('credentials', formData);
+    await signIn("credentials", formData);
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
-        case 'CredentialsSignin':
-          return 'Invalid credentials.';
+        case "CredentialsSignin":
+          return "Invalid credentials.";
         default:
-          return 'Something went wrong.';
+          return "Something went wrong.";
       }
     }
 
@@ -160,10 +162,7 @@ export async function authenticate(
 
 export async function authenticateWithOAuth(formData: FormData) {
   const provider = formData.get("provider");
-  if (
-    provider !== "github" &&
-    provider !== "google"
-  ) {
+  if (provider !== "github" && provider !== "google") {
     throw new Error("Unsupported sign-in provider.");
   }
 

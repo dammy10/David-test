@@ -103,9 +103,9 @@ async function seedRevenue() {
 
 export async function GET() {
   try {
-    await sql`TRUNCATE TABLE invoices CASCADE`;
-    await sql`TRUNCATE TABLE customers CASCADE`;
-    await sql`TRUNCATE TABLE users CASCADE`;
+    // await sql`TRUNCATE TABLE invoices CASCADE`;
+    // await sql`TRUNCATE TABLE customers CASCADE`;
+    // await sql`TRUNCATE TABLE users CASCADE`;
 
     await seedUsers();
     await seedCustomers();

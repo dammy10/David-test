@@ -1,4 +1,4 @@
-import postgres from "postgres";
+import { sql } from "./db";
 import {
   CustomerField,
   CustomersTableType,
@@ -13,14 +13,14 @@ import { formatCurrency } from "./utils";
 // Caching on `globalThis` prevents creating many pools during Next.js
 // dev HMR or across multiple server instances, which can exhaust DB
 // connections (EMAXCONNSESSION).
-const globalRef = globalThis as unknown as { __pg_sql?: any };
-const sql =
-  globalRef.__pg_sql ??
-  (globalRef.__pg_sql = postgres(process.env.POSTGRES_URL!, {
-    ssl: "require",
-    // Limit the number of clients this process will open. Tune as needed.
-    max: 4,
-  }));
+// const globalRef = globalThis as unknown as { __pg_sql?: any };
+// const sql =
+//   globalRef.__pg_sql ??
+//   (globalRef.__pg_sql = postgres(process.env.POSTGRES_URL!, {
+//     ssl: "require",
+//     // Limit the number of clients this process will open. Tune as needed.
+//     max: 4,
+//   }));
 
 const SKIP_DB_DURING_BUILD =
   (process.env.SKIP_DB_DURING_BUILD || "").toLowerCase() === "true";

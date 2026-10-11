@@ -9,17 +9,11 @@ import type { User } from "@/app/lib/definitions";
 import bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
 import postgres from "postgres";
+import {sql} from "@/app/lib/db";
 import { getOAuthProviderCredentials } from "@/app/lib/auth-providers";
 
 // Reuse a single Postgres client across reloads to avoid exhausting DB
 // connections during dev/hot-reload or multiple server workers.
-const globalPg = globalThis as unknown as { __pg_auth_sql?: any };
-const sql =
-  globalPg.__pg_auth_sql ??
-  (globalPg.__pg_auth_sql = postgres(process.env.POSTGRES_URL!, {
-    ssl: "require",
-    max: 4,
-  }));
 
 const CredentialsSchema = z.object({
   email: z.string().email(),
