@@ -9,6 +9,7 @@ export const sql =
   (globalForDb.__shared_sql = postgres(process.env.POSTGRES_URL!, {
     ssl: "require",
     max: 2,
-    idle_timeout: 10,
+    // Reuse warm connections across brief pauses between page visits.
+    idle_timeout: 60,
     connect_timeout: 10,
   }));

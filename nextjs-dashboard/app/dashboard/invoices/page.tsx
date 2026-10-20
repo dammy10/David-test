@@ -16,7 +16,7 @@ export default async function Page(props: {
   const searchParams = await props.searchParams;
   const query = searchParams?.query || '';
   const currentPage = Number(searchParams?.page) || 1;
-  const  totalPages  = await fetchInvoicesPages(query);
+
   return (
     <div className="w-full">
       <div className="flex w-full items-center justify-between">
@@ -30,8 +30,12 @@ export default async function Page(props: {
         <Table query={query} currentPage={currentPage} />
       </Suspense>
       <div className="mt-5 flex w-full justify-center">
-        <Pagination totalPages={totalPages} />
+        <Suspense key={query} fallback={<div className="h-10 w-48 animate-pulse rounded bg-gray-100" role="status" aria-label="Loading pagination" />}><InvoicePagination query={query} /></Suspense>
       </div>
     </div>
   );
+}
+async function InvoicePagination({ query }: { query: string }) {
+  const totalPages = await fetchInvoicesPages(query);
+  return <Pagination totalPages={totalPages} />;
 }

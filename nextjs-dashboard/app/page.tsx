@@ -45,6 +45,7 @@ export default function Page() {
             height={760}
             className="hidden md:block"
             alt="Desktop version"
+            loading="eager"
           />
           <Image
             src="/hero-mobile.png"
@@ -52,6 +53,7 @@ export default function Page() {
             height={620}
             className="block md:hidden"
             alt="Mobile version"
+            loading="eager"
           />
         </div>
       </div>
