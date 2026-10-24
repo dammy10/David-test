@@ -216,3 +216,20 @@ export function InvoicesTableSkeleton() {
     </div>
   );
 }
+
+
+export function CustomersTableSkeleton() {
+  return (
+    <div className="mt-6 flow-root animate-pulse">
+      <div className="overflow-hidden rounded-md bg-gray-50 p-2">
+        <div className="space-y-2 md:hidden">
+          {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-36 rounded-md bg-white p-4"><div className="h-5 w-40 rounded bg-gray-200" /><div className="mt-4 h-4 w-52 rounded bg-gray-100" /><div className="mt-5 h-5 w-full rounded bg-gray-100" /></div>)}
+        </div>
+        <table className="hidden min-w-full md:table">
+          <thead><tr>{['Name', 'Email', 'Total Invoices', 'Total Pending', 'Total Paid', 'Actions'].map((label) => <th key={label} className="px-4 py-5 text-left"><div className="h-4 w-20 rounded bg-gray-200" /></th>)}</tr></thead>
+          <tbody>{Array.from({ length: 6 }, (_, index) => <tr key={index} className="border-t border-gray-100">{Array.from({ length: 6 }, (_, cell) => <td key={cell} className="px-4 py-5"><div className="h-5 w-24 rounded bg-gray-100" /></td>)}</tr>)}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
