@@ -52,7 +52,7 @@ export async function fetchRevenue() {
       GROUP BY month_start
       ORDER BY month_start
     `;
-
+    console.log("fetchRevenue first row:", JSON.stringify(data[0]));
     return data;
   } catch (error) {
     console.error("Database Error:", error);
@@ -90,12 +90,14 @@ export async function fetchCardData() {
         totalPaidInvoices: formatCurrency(0),
         totalPendingInvoices: formatCurrency(0),
       };
-    const [summary] = await sql<{
-      invoice_count: string;
-      customer_count: string;
-      paid: string;
-      pending: string;
-    }[]>`
+    const [summary] = await sql<
+      {
+        invoice_count: string;
+        customer_count: string;
+        paid: string;
+        pending: string;
+      }[]
+    >`
       SELECT
         COUNT(*) AS invoice_count,
         (SELECT COUNT(*) FROM customers) AS customer_count,
@@ -261,8 +263,8 @@ export async function fetchFilteredCustomers(
       total_paid: formatCurrency(Number(customer.total_paid)),
     }));
   } catch (error) {
-    console.error('Database Error:', error);
-    throw new Error('Failed to fetch customer table.');
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch customer table.");
   }
 }
 
@@ -275,8 +277,8 @@ export async function fetchCustomersPages(query: string): Promise<number> {
     `;
     return Math.ceil(Number(rows[0]?.count ?? 0) / ITEMS_PER_PAGE);
   } catch (error) {
-    console.error('Database Error:', error);
-    throw new Error('Failed to fetch total number of customers.');
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch total number of customers.");
   }
 }
 
@@ -284,7 +286,7 @@ export type CustomerInvoice = {
   id: string;
   date: string;
   amount: number;
-  status: 'pending' | 'paid';
+  status: "pending" | "paid";
 };
 
 export type CustomerProfile = {
@@ -298,15 +300,18 @@ export type CustomerProfile = {
   invoices: CustomerInvoice[];
 };
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function fetchCustomerById(id: string): Promise<CustomerProfile | null> {
+export async function fetchCustomerById(
+  id: string,
+): Promise<CustomerProfile | null> {
   // Validate before interpolating into a UUID comparison: malformed IDs must
   // produce the route's 404 instead of a Postgres invalid-input-syntax error.
   if (!UUID_PATTERN.test(id)) return null;
   try {
     if (SKIP_DB_DURING_BUILD) return null;
-    const rows = await sql<Omit<CustomerProfile, 'invoices'>[]>`
+    const rows = await sql<Omit<CustomerProfile, "invoices">[]>`
       SELECT c.id, c.name, c.email, c.image_url,
         COUNT(i.id)::int AS total_invoices,
         COALESCE(SUM(i.amount) FILTER (WHERE i.status = 'pending'), 0)::bigint AS total_pending,
@@ -328,10 +333,13 @@ export async function fetchCustomerById(id: string): Promise<CustomerProfile | n
       total_invoices: Number(rows[0].total_invoices),
       total_pending: Number(rows[0].total_pending),
       total_paid: Number(rows[0].total_paid),
-      invoices: invoices.map((invoice) => ({ ...invoice, amount: Number(invoice.amount) })),
+      invoices: invoices.map((invoice) => ({
+        ...invoice,
+        amount: Number(invoice.amount),
+      })),
     };
   } catch (error) {
-    console.error('Database Error:', error);
-    throw new Error('Failed to fetch customer.');
+    console.error("Database Error:", error);
+    throw new Error("Failed to fetch customer.");
   }
 }
