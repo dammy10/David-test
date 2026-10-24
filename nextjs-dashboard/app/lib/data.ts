@@ -30,6 +30,7 @@ const SKIP_DB_DURING_BUILD =
 export async function fetchRevenue() {
   try {
     if (SKIP_DB_DURING_BUILD) return [] as Revenue[];
+    console.log("DB revenue START");
     const data = await sql<Revenue[]>`
       SELECT
         TO_CHAR(month_start, 'Mon') AS month,
@@ -52,6 +53,7 @@ export async function fetchRevenue() {
       GROUP BY month_start
       ORDER BY month_start
     `;
+    console.log("DB revenue DONE");
     console.log("fetchRevenue first row:", JSON.stringify(data[0]));
     return data;
   } catch (error) {
@@ -63,6 +65,7 @@ export async function fetchRevenue() {
 export async function fetchLatestInvoices(): Promise<LatestInvoice[]> {
   try {
     if (SKIP_DB_DURING_BUILD) return [];
+    console.log("DB latest invoices START");
     const data = await sql<LatestInvoiceRaw[]>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
       FROM invoices
@@ -74,6 +77,7 @@ export async function fetchLatestInvoices(): Promise<LatestInvoice[]> {
       ...invoice,
       amount: formatCurrency(invoice.amount),
     }));
+    console.log("DB latest invoices DONE");
     return latestInvoices;
   } catch (error) {
     console.error("Database Error:", error);
@@ -90,6 +94,7 @@ export async function fetchCardData() {
         totalPaidInvoices: formatCurrency(0),
         totalPendingInvoices: formatCurrency(0),
       };
+    console.log("DB cards START");
     const [summary] = await sql<
       {
         invoice_count: string;
@@ -105,7 +110,7 @@ export async function fetchCardData() {
         COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0) AS pending
       FROM invoices
     `;
-
+    console.log("DB cards DONE");
     const numberOfInvoices = Number(summary.invoice_count);
     const numberOfCustomers = Number(summary.customer_count);
     const totalPaidInvoices = formatCurrency(Number(summary.paid));
