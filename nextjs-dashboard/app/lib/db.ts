@@ -1,6 +1,6 @@
 import postgres from "postgres";
 
-const databaseEndpoint = new URL(process.env.POSTGRES_URL!);
+const databaseEndpoint = new URL(process.env.DATABASE_SESSION_URL!);
 
 console.log("Database endpoint:", {
   host: databaseEndpoint.hostname,
@@ -12,7 +12,7 @@ const globalForDb = globalThis as typeof globalThis & {
 
 export const sql =
   globalForDb.__shared_sql ??
-  (globalForDb.__shared_sql = postgres(process.env.POSTGRES_URL!, {
+  (globalForDb.__shared_sql = postgres(process.env.DATABASE_SESSION_URL!, {
     ssl: "require",
     prepare: false,
     max: 1,
