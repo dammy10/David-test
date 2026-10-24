@@ -1,5 +1,11 @@
 import postgres from "postgres";
 
+const databaseEndpoint = new URL(process.env.POSTGRES_URL!);
+
+console.log("Database endpoint:", {
+  host: databaseEndpoint.hostname,
+  port: databaseEndpoint.port || "5432",
+});
 const globalForDb = globalThis as typeof globalThis & {
   __shared_sql?: ReturnType<typeof postgres>;
 };
