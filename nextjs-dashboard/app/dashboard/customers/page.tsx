@@ -7,9 +7,11 @@ import CustomersTable from '@/app/ui/customers/table';
 import Pagination from '@/app/ui/invoices/pagination';
 import { CustomersTableSkeleton } from '@/app/ui/skeletons';
 import { fetchCustomersPages } from '@/app/lib/data';
+import { Metadata } from "next";
 
-export const metadata = { title: 'Customers' };
-
+export const metadata: Metadata = {
+  title: "Customers",
+};
 export default async function Page(props: {
   searchParams?: Promise<{ query?: string; page?: string }>;
 }) {

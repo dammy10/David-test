@@ -9,7 +9,11 @@ import {
 } from "@/app/ui/skeletons";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 export default async function Page() {
   await connection();
 
